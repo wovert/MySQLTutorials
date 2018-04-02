@@ -1,0 +1,34 @@
+#!/bin/bash 
+VIP=10.103.9.221 
+DEV=eth0 
+. /etc/rc.d/init.d/functions 
+case "$1" in 
+start) 
+echo "1">/proc/sys/net/ipv4/ip_forward 
+/sbin/ipvsadm -A -t $VIP:3306 -s rr -p 60 
+/sbin/ipvsadm -a -t $VIP:3306 -r 10.103.9.204:3306 -g 
+/sbin/ipvsadm -a -t $VIP:3306 -r 10.103.9.205:3306 -g 
+/sbin/ipvsadm --start-daemon 
+echo "LVS-DR server starts successfully.\n" 
+;; 
+stop) 
+/sbin/route del $VIP >/dev/null 2>&1 
+echo "0" >/proc/sys/net/ipv4/ip_forward 
+/sbin/ipvsadm -C 
+echo "LVS-DR real server stopped." 
+;; 
+status) 
+isLoOn=`/sbin/ifconfig lo:0 | grep "$VIP"` 
+isRoOn=`/bin/netstat -rn | grep "$VIP"` 
+if [ "$isLoOn" == "" -a "$isRoOn" == "" ]; then 
+echo "LVS-DR real server has to run yet." 
+else 
+echo "LVS-DR real server is running." 
+fi 
+exit 3 
+;; 
+*) 
+echo "Usage: $0 {start|stop|status}" 
+exit 1 
+esac 
+exit 0 

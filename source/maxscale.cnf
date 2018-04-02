@@ -1,0 +1,54 @@
+[maxscale]
+threads=4
+
+[server1]
+type=server
+address=10.102.36.132
+port=3306
+protocol=MySQLBackend
+
+[server2]
+type=server
+address=10.102.36.133
+port=3306
+protocol=MySQLBackend
+
+[server3]
+type=server
+address=10.102.36.134
+port=3306
+protocol=MySQLBackend
+
+[MySQL Monitor]
+type=monitor
+module=mysqlmon
+servers=server1,server2,server3
+user=scalemon
+passwd=E0A1D16D5B9856BD02B01F6FBD1AE8BC
+monitor_interval=1000
+
+
+[Read-Write Service]
+type=service
+router=readwritesplit
+servers=server1,server2,server3
+user=dba_scale
+passwd=2F653EFAF2C26DFBA3F5FB3D82EEC91B
+max_slave_connections=100%
+max_slave_replication_lag=60
+
+[MaxAdmin Service]
+type=service
+router=cli
+
+[Read-Write Listener]
+type=listener
+service=Read-Write Service
+protocol=MySQLClient
+port=3306
+
+[MaxAdmin Listener]
+type=listener
+service=MaxAdmin Service
+protocol=maxscaled
+port=6603
