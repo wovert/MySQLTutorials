@@ -9,7 +9,7 @@
 
 
 ## 购物流程
-用户登录->选购商品->加购物车->检车库存->提交订单
+- 用户登录->选购商品->加购物车->检车库存->提交订单
 - 货到付款 	
 	 + Y
 	 + N => 订单付款
@@ -50,14 +50,13 @@
 - 临时表：以tmp为前缀并以日期为后缀
 - 备份表：以bak为前缀并以日期为后缀
 - 所有存储**相同数据的列名和列类型必须一致**（不同列名影响性能）
--
 
 
 - lym_userdb(零壹码网的用户数据库)
 - user_account(用户账号表)
 
 ## 数据库基本设计规范
-**MySQL 5.5 使用之前 MyISAM(默认存储引擎)**
+- **MySQL 5.5 使用之前 MyISAM(默认存储引擎)**
 
 - 所有表必须使用 **InnoDB** 存储引擎
 	+ 5.6 + 默认引擎
@@ -179,8 +178,8 @@
 > execute stmt1 USING @a, @b;
 > deallocate prepare stmt1;
 
-	+ 只传参数，比传递SQL语句更高效
-	+ 相同语句可以一次解析，多次使用，提高处理效率
+- 只传参数，比传递SQL语句更高效
+- 相同语句可以一次解析，多次使用，提高处理效率
 
 - 避免数据类型的隐式转换
 	+ 隐式转换导致索引失效
@@ -268,8 +267,6 @@
 	+ 不准夸库
 	+ 程序使用账号原则上不准有drop权限
 
-
-
 # 数据库设计
 
 ## 用户模型设计
@@ -337,18 +334,20 @@
 #### 数据表设计
 - 用户登陆表：customer_login
 
-`create table customer_login(
+```
+create table customer_login(
 	customer_id int unsigned auto_increment not null '用户ID',
 	login_name varchar(28) not null comment '用户登录名',
 	password char(32) not null comment 'md5加密的密码',
 	user_status tinyint not null default 1 comment '用户状态(1:正常,0:冻结)',
 	modified_time timestamp not null default CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后修改时间',
 primary key pk_customerid(customer_id)
-) engine=innodb comment='用户登陆表';`
+) engine=innodb comment='用户登陆表';
+```
 
 - 用户信息表：customer_info
-
-`create table customer_info{
+```
+create table customer_info{
 	customer_info_id int unsigned auto_increment not null comment '自增主键ID',
 	customer_id int unsigned not null comment 'customer_login表的自增ID',
 	customer_name varchar(20) not null comment '用户真实姓名',
@@ -364,24 +363,25 @@ primary key pk_customerid(customer_id)
 	user_money decimal(8,2) not null default 0.00 comment '用户余额',
 	modified_time timestamp not null default current_timestamp on update current_timestamp comment '最后修改时间',
 	primary key pk_customerinfoid(customer_info_id)
-} engine=innodb comment '用户信息表'`
-
+} engine=innodb comment '用户信息表'
+```
 
 - 用户级别表(customer_level_info)
-
-`create table customer_level_info(
+```
+create table customer_level_info(
 	customer_level tinyint not null auto_increment comemnt '会员级别ID',
 	level_name varchar(10) not null comment '会员级别名称',
 	min_point int unsigned not null default 0 comment '级别最低积分',
 	max_point int unsigned not null default 0 comment '级别最高积分',
 	modified_time timestamp not null default current_timestamp 0 on update current_timestamp comment '最后修改时间',
 	primary key pk_levelid(customer_level)
-) engine=innodb comment '用户级别信息表'`
+) engine=innodb comment '用户级别信息表'
+```
 
 
 - 用户地址表(customer_addr)
-
-`create table customer_addr(
+```
+create table customer_addr(
 	customer_addr_id int unsigned auto_increment not null comment '自增主键ID',
 	customer_id int unsigned not null comment 'customer_login表的自增ID',
 	zip smallint not null comment '邮编',
@@ -392,11 +392,12 @@ primary key pk_customerid(customer_id)
 	is_default tinyint not null comment '是否默认',
 	modified_time timestamp not null default current_timestamp on update current_timestamp comment '最后修改时间',
 	primary key pk_customeraddid(customer_addr_id)
-) engine=innodb comment '用户地址表'`
-
+) engine=innodb comment '用户地址表'
+```
 
 - 用户积分日志表(customer_point_log)
-`create table customer_point_log(
+```
+create table customer_point_log(
 	point_id int unsigned not null auto_increment comment '积分日志ID',
 	customer_id int unsigned not null comment '用户ID',
 	source tinyint unsigned not null comment '积分来源(0：订单，1：登录，2：活动)',
@@ -404,10 +405,12 @@ primary key pk_customerid(customer_id)
 	change_point smallint not null default 0 comment '变更积分数',
 	create_time timestamp not null comment '积分日志生成时间',
 	primary key pk_pointid(point_id)
-) engine=innodb comment '用户积分日志表'`
+) engine=innodb comment '用户积分日志表'
+```
 
 - 用户余额变动表(customer_balance_log)
-`create table customer_balance_log(
+```
+create table customer_balance_log(
 	balance_id int unsigned not null auto_inrement comment '余额日志ID',
 	customer_id int unsigned not null comment '用户ID',
 	source tinyint unsigned not null default 1 comment '记录来源（1：订单，2：退货单）',
@@ -415,18 +418,20 @@ primary key pk_customerid(customer_id)
 	create_time timestamp not null default current_timestamp comment '记录生成时间',
 	amount decimal(8,2) not null default 0.00 comment '变动金额',
 	primary key pk_balanceid (balance_id)
-) engine=innodb comment '用户余额变动表'`
+) engine=innodb comment '用户余额变动表'
+```
 
 - 用户登录日志表（customer_login_log）
-`create table customer_login_log(
+```
+create table customer_login_log(
 	login_id int unsigned not null auto_increment comment '登录日志ID',
 	customer_id int unsigned not null comment '登录用户ID',
 	login_time timestamp not null comment '用户登录时间',
 	login_ip int unsigned not null comment '登录IP',
 	login_type tinyint not null comment '登录类型（0：未成功，1：成功）',
 	primary key pk_loginid(login_id)
-) engine=innodb comment '用户登录日志表'`
-
+) engine=innodb comment '用户登录日志表'
+```
 
 - 业务场景
 	+ 用户每次登录都会记录 customer_login_log 日志
@@ -436,7 +441,8 @@ primary key pk_customerid(customer_id)
 	+ 使用 range 分区
 	+ login_time 作为分区键
 
-`create table customer_login_log(
+```
+create table customer_login_log(
 	login_id int unsigned not null auto_increment comment '登录日志ID',
 	customer_id int unsigned not null comment '登录用户ID',
 	login_time timestamp not null comment '用户登录时间',
@@ -448,46 +454,59 @@ partitoin by range(year(lgin_time)) (
 	partition p0 values less than(2015),
 	partition p1 values less than(2016),
 	partition p2 values less than(2017)
-);`
+);
+```
 
-insert 插入数据
-`select * from customer_login_log;`
-`select table_name, partition_name, partition_description, table_rows from infomation_shema.PARTITIONS where table_name='customer_login_log'`
+- insert 插入数据
+```
+select * from customer_login_log;
+select table_name, partition_name, partition_description, table_rows from infomation_shema.PARTITIONS where table_name='customer_login_log'
+```
 
-`alter table customer_login_log add partition (partition p4 values less than(2018))`
+```
+alter table customer_login_log add partition (partition p4 values less than(2018))
+```
 
 
 - 删除分区表
-`alter table customer_login_log drop partition p0;`
+```alter table customer_login_log drop partition p0;```
 
 - 建立归档表
-`create table arch_customer_login_log(
+```
+create table arch_customer_login_log(
 	login_id int unsigned not null auto_increment comment '登录日志ID',
 	customer_id int unsigned not null comment '登录用户ID',
 	login_time timestamp not null comment '用户登录时间',
 	login_ip int unsigned not null comment '登录IP',
 	login_type tinyint not null comment '登录类型（0：未成功，1：成功）',
 	primary key pk_loginid(login_id)
-) engine=innodb comment '用户登录日志归档表'`
+) engine=innodb comment '用户登录日志归档表'
+```
 
 - 分区迁移
-`alter table customer_login_log exchange partition p2 with table arch_customer_login_log;`
+```
+alter table customer_login_log exchange partition p2 with table arch_customer_login_log;
+```
 
 - 分区迁移之后删除分区p2
-`alter table customer_login_log drop partition p2;`
+```
+alter table customer_login_log drop partition p2;
+```
 
 - 查看归档
-`select * from customer_login_log;`
+```
+select * from customer_login_log;
+```
 
 - 修改归档引擎(只能查找操作，不能写操作)
-`alter table arch_customer_login_log engine=ARCHIVE`
+```
+alter table arch_customer_login_log engine=ARCHIVE
+```
 
 ## 分区表的注意事项
 - 结合业务场景选择分区键，避免跨分区查询
 - 对分区表进行查询最好在where从句中包含分区键
 - 具有主键或唯一索引的表，主键或唯一索引必须是分区键的一部分
-
-
 
 ## 商品实体
 - 商品名称
@@ -511,7 +530,8 @@ insert 插入数据
 
 
 - 品牌信息表(brand_info)
-`create table brand_info(
+```
+create table brand_info(
 	brand_id small int unsigned auto_increment not null comment ''品牌ID,
 	brand_name varchar(50) not null comment '品牌名称',
 	telephone varchar(50) not null comment '联系电话',
@@ -522,10 +542,12 @@ insert 插入数据
 	brand_order tinyint not null default comment '排序',
 	modified_time timestamp not null default current_timestmap on update current_timestamp comment '最后修改时间',
 	primary key pk_brandid(brand_id)
-) engine=innodb comment="品牌信息表"`
+) engine=innodb comment="品牌信息表"
+```
 
 - 分类信息表(product_category)
-`create table product_category(
+```
+create table product_category(
 	category_id smallint unsigned auto_increment not null comment '分类ID',
 	category_name varchar(10) not null comment '分类名称',
 	category_code varchar(10) not null comment '分类编号',
@@ -534,11 +556,12 @@ insert 插入数据
 	category_status tinyint not null default 1 comment '分类状态',
 	modified_time timestamp not null default current_timestmap on update current_timestamp comment '最后修改时间',
 	primary key pk_categoryid(category_id)
-) engine=innodb comment='商品分类表'`
-
+) engine=innodb comment='商品分类表'
+```
 
 - 供应商信息表(supplier_info)
-`create table supplier_info(
+```
+create table supplier_info(
 	supplier_id int unsigned auto_increment not null comment '供应商ID',
 	supplier_code char(8) not null comment '供应商编号',
 	supplier_name char(50) not null comment '供应商名称',
@@ -551,10 +574,12 @@ insert 插入数据
 	supplier_status tinyint not null default 0 comment '状态（0：禁用，1：启用）',
 	modified_time timestamp not null default current_timestmap on update current_timestamp comment '最后修改时间',
 	primary key pk_supplierid(supplier_id)
-) engine=innodb comment '供应商信息表';`
+) engine=innodb comment '供应商信息表';
+```
 
 - 商品信息表(product_info)
-`create table product_info(
+```
+create table product_info(
 	product_id int unsigned auto_increment not null comment '商品ID',
 	product_code char(16) not null comment '商品编码',
 	product_name varchar(20) not null comment '商品名称',
@@ -579,22 +604,23 @@ insert 插入数据
 	indate timestamp not null default CURRENT_TIMESTAMP comment '商品录入时间',
 	modified_time timestamp not null default current_timestmap on update current_timestamp comment '最后修改时间',
 	primary key pk_productid(product_id)
-) engine=innodb comment '商品信息表';`
+) engine=innodb comment '商品信息表';
+```
 
 
 - 商品图片表(product_pic_info)
 
-
-
-
 # MySQL分区表
 - 确认MySQL 服务器是否支持分区表
+```
 mysql> show plugins;
 partition active 
+```
 
 ## 分区表的特点
 - 在逻辑为一个表，在物理上存储多个文件中
-`create table customer_login_log(
+```
+create table customer_login_log(
 	login_id int unsigned not null auto_increment comment '登录日志ID',
 	customer_id int unsigned not null comment '登录用户ID',
 	login_time timestamp not null comment '用户登录时间',
@@ -603,7 +629,8 @@ partition active
 	primary key pk_loginid(login_id)
 ) engine=innodb comment '用户登录日志表'
 partition by hash(customer_id)
-partitions 4;`
+partitions 4;
+```
 
 - 非分区表的物理文件
 	+ customer_login_log.frm
@@ -625,17 +652,19 @@ partitions 4;`
 
 
 - 如何建立hash分区表
-`create table customer_login_log(
+```
+create table customer_login_log(
 customer_id int(10) unsigned not null,
 login_time timestamp not null,
 login_ip int(10) unsigned not null,
 login_type tinyint(4) not null
 ) engine=innodb
 partition by hash(customer_id)
-partitions 4` 分区数量
+partitions 4 分区数量
 
-`partition by hash(unix_timestamp(login_time))
-partitions 4`
+partition by hash(unix_timestamp(login_time))
+partitions 4
+```
 
 - 插入数据时跟正常插入数据方式一样的
 
@@ -665,19 +694,15 @@ partitions 4`
 - yearweek()
 
 
-
-
-
 ## 按范围分区(range)
-
 - 根据分区键值的范围把数据行存储到表的不同分区中
 - 多个分区的范围要连续，但不能重叠
 - 默认情况下使用 values less than 属性，即每个分区不包括指定的那个值
 
 
 - 如何范围分区
-
-`create table customer_login_log(
+```
+create table customer_login_log(
 customer_id int(10) unsigned not null,
 login_time timestamp not null,
 login_ip int(10) unsigned not null,
@@ -688,7 +713,9 @@ partition by range (customer_id) (
 	partition p1 values less than (20000),
 	partition p2 values less than (30000),
 	partition p3 values less than MAXVALUE
-)`
+)
+```
+
 - p0: 小于10000的customer_id，存储与p0， 0-9999
 - p1: 小于20000的customer_id，存储与p0， 10000-19999
 - p0: 大于30000的customer_id，存储与p3， > 30000 
@@ -706,7 +733,8 @@ partition by range (customer_id) (
 - 每一行数据必须能找到对应的分区列表，否则数据插入失败
 
 - 如何建立 li分区
-`create table customer_login_log(
+```
+create table customer_login_log(
 customer_id int(10) unsigned not null,
 login_time timestamp not null,
 login_ip int(10) unsigned not null,
@@ -715,14 +743,17 @@ login_type tinyint(4) not null
 partition by list (login_type) (
 	partition p0 values in (1,3,5,7,9),
 	partition p1 values in (2,4,6,8)
-)`
+)
+```
 - insert into 插入login_type 10 出现错误代码：1526
 
 
 ## 数据库解决方案
 
 ## 如何对评论进行分页展示
-`explain select customer_id, title, content from product_comment where audit_status=1 and product_id = 199727 limit 0,5;`
+```
+explain select customer_id, title, content from product_comment where audit_status=1 and product_id = 199727 limit 0,5;
+```
 - SQL如何使用索引
 - 连接查询的执行顺序
 - 查询扫描的数据行数
@@ -741,7 +772,10 @@ partition by list (login_type) (
 	+ dependento union： 当union作为子查询时，第二或是第二个后的查询的select_type值
 	+ union result: union产生的结果集
 	+ derived: 出现在from子句中的子查询
+
+```
 primary > simple > subquery > dependent subquery
+```
 
 - table列
 	+ 表的名称
@@ -789,21 +823,25 @@ primary > simple > subquery > dependent subquery
 - 无法展示存储过程，触发器/UDF对查询的影响
 - 早期版本仅支持select
 
+```
 select count(distinct audit_status)/count(*) as audit_rate, 
 count(distince product_id)/count(*) as product_rate from product_comment;
- 
-- 越接近1使用该字段放左侧，创建索引
+```
 
+- 越接近1使用该字段放左侧，创建索引
+```
 create index idx_productid_auditStat on product_comment(product_id,audit_status)
+```
 
 - 进一步优化
+```
 select t.customer_id, t.title, t.content
 from (
 select comment_id from product_comment
 where produt_id=199727 and audit_status=1 limit 0,15
 ) a join product_comment t
 on a.comment_id = t.comment_id;
-
+```
 
 
 ## 删除重复数据
@@ -815,24 +853,31 @@ on a.comment_id = t.comment_id;
 
 
 1. 查看是否存在对于订单同一商品的重复评论
-`select order_id, product_id, count(*)
+```
+select order_id, product_id, count(*)
 from product_comment
-group by order_id, product_id having count(*)>1`
+group by order_id, product_id having count(*)>1
+```
 
-`select * 
+```select * 
 from product_comment
-where order_id=4 and product_id=134509`
+where order_id=4 and product_id=134509
+```
 
 2. 备份 product_comment 表
-`create table bak_product_comment_180312
+```
+create table bak_product_comment_180312
 like
 product_comment
 insert into back_product_comment_180312
-select * from product_comment;`
+select * from product_comment;
+```
+
 - 或 mysqldump
 
 3. 删除同一订单的重复评论
-`delete a
+```
+delete a
 from product_comment a
 join (
 	select order_id, product_id, min(comment_id) as comment_id
@@ -840,12 +885,13 @@ join (
 	group by order_id, product_id
 	having count(*)>=2
 ) b on a.order_id=b.order_id and a.product_id=b.product_id
-and a.comment_id > b.comment_id`
+and a.comment_id > b.comment_id
+```
 
 
 ## 分区间统计
 > 统计消费总金额大于1000元的，800到1000元的，500到800元的，以及500元以下的人数
-
+```
 select count(case when ifnull(total_money, 0) >=1000 then a.customer_id end) as '大于1000',count(case when ifnull(total_money,0) >=800 and ifnull(total_money,0)<100 then a.customer_id end) as '800-1000'
 ,count(case when ifnull(total_money,0) >=500 and ifnull(total_money,0) < 800
 then a.customer_id end) as '500-800'
@@ -855,6 +901,7 @@ left join
 (select customer_id, sum(order_money) as total_money
 from mc_orderdb.order_master group by customer_id) b
 on a.customer_id = b.customer_id;
+```
 
 ## 捕获有问题的 SQL
 
@@ -869,7 +916,9 @@ on a.customer_id = b.customer_id;
 - Query_time Lock_time Rows_send(查询结果返回行数) Rows_examined: 10000(扫描行数)
 
 ### 如何分析慢查日志
-`mysqldumpslow slow-mysql.log`
+```
+mysqldumpslow slow-mysql.log
+```
 
 ## 数据库备份
 - 数据库复制不能取代备份的作用
@@ -897,73 +946,78 @@ on a.customer_id = b.customer_id;
 - 备份整个数据库：mysqldump [OPTIONS] --all-database [OPTIONS];
 
 ### 常用参数：
--u， --user=name
--p, --password=[=name]
+- -u， --user=name
+- -p, --password=[=name]
 - 必须有用户权限才能备份：select,reload,lock tables,replication client, show view, process
 
---single-transaction: 启动一个事务
-数据备份时一致性
-仅对innodb存储引擎有效
-备份期间要保证没有其他DDL语句执行
-innodb事务不能隔离DDL操作
+- --single-transaction: 启动一个事务
+	+ 数据备份时一致性
+	+ 仅对innodb存储引擎有效
+	+ 备份期间要保证没有其他DDL语句执行
+	+ innodb事务不能隔离DDL操作
 
--l, --lock-tables 
-非事务性存储引擎（锁定一个数据库的所有表）
-备份时，其他数据库只能进行读操作
-备份时，某一数据库的数据一致的，但不能保证mysql所有数据库一致的，因此规范中所有数据库引擎使用 InnoDB 原因
+- -l, --lock-tables 
+	+ 非事务性存储引擎（锁定一个数据库的所有表）
+	+ 备份时，其他数据库只能进行读操作
+	+ 备份时，某一数据库的数据一致的，但不能保证mysql所有数据库一致的，因此规范中所有数据库引擎使用 InnoDB 原因
 
---single-transaction与--lock-tables 互斥，不能同时使用
+- --single-transaction与--lock-tables 互斥，不能同时使用
 
-有innodb 和其他存储引擎时只能使用 --lock-tables
+- 有innodb 和其他存储引擎时只能使用 --lock-tables
 
--x, --lock-all-tables 
-整个数据库所有实例都进行枷锁，保证备份一致性
-备份过程中数据库只能变成只读的，而不能写数据
+- -x, --lock-all-tables 
+	+ 整个数据库所有实例都进行枷锁，保证备份一致性
+	+ 备份过程中数据库只能变成只读的，而不能写数据
 
---master-data=[1/2]
-时间恢复，新建新的slaver实例
-1: 备份是，change master语句也备份，默认值1
-2: change master 语句以注释形式备份
+- --master-data=[1/2]
+	+ 时间恢复，新建新的slaver实例
+	+ 1: 备份是，change master语句也备份，默认值1
+	+ 2: change master 语句以注释形式备份
 
--R, --routines 存储过程
---triggers 触发器
--E, --events 调度事件
+- -R, --routines 存储过程
+- --triggers 触发器
+- -E, --events 调度事件
 
---hex-blob (binary类型十六进制格式备份)
---tab=path 结构和数据分别存储
+- --hex-blob (binary类型十六进制格式备份)
+- --tab=path 结构和数据分别存储
 
--w, --where='过滤条件' 只能单表数据条件导出
+- -w, --where='过滤条件' 只能单表数据条件导出
 
 ### mysqldump 实例
-`# mysql -uroot -p`
+```
+mysql -uroot -p
 
-`mysql> create user 'backup'@'localhost' identified by '123456'`
+mysql> create user 'backup'@'localhost' identified by '123456'
 
-`mysql> grant select,reload,lock tables, replication client, show view, event,process on *.* to 'backup'@'localhost';`
+mysql> grant select,reload,lock tables, replication client, show view, event,process on *.* to 'backup'@'localhost';
 
-`# cd /data/db_backup`
+cd /data/db_backup
 
-`# mysqldump -ubackup -p --master-data=2 --single-transaction --routines --triggers --events dbname > dbname.sql`
+mysqldump -ubackup -p --master-data=2 --single-transaction --routines --triggers --events dbname > dbname.sql
 
-`# grep "CREATE TABLE" dbname.sql`
+grep "CREATE TABLE" dbname.sql
 
-`# mysqldump -ubackup -p --master-data=2 --single-transaction --routines --triggers --events dbname dbname tablename > tablename.sql`
+mysqldump -ubackup -p --master-data=2 --single-transaction --routines --triggers --events dbname dbname tablename > tablename.sql
 
-`# grep "CREATE TABLE" tablename.sql`
-
-
+grep "CREATE TABLE" tablename.sql
+```
 
 ### 全量备份
-`# mysqldump -ubackup -p --master-data=2 --single-transaction --routines --triggers --events --all-databases > db.sql`
+```
+mysqldump -ubackup -p --master-data=2 --single-transaction --routines --triggers --events --all-databases > db.sql
+grep 'Current Database' db.sql
+mkdir -p /tmp/cg_orderdb && chown mysql:mysql /tmp/cg_orderdb
+```
 
-`# grep 'Current Database' db.sql`
-
-`# mkdir -p /tmp/cg_orderdb && chown mysql:mysql /tmp/cg_orderdb`
-
-`# mysql -uroot -p`
+```
+mysql -uroot -p
 > grant file on *.* to 'backup'@'localhost';
+```
 
-`# mysqldump -ubackup -p --master-data=2 --single-transaction --routines --triggers --events --tab="/tpm/cg_orderdb" cg_orderdb`
+```
+# mysqldump -ubackup -p --master-data=2 --single-transaction --routines --triggers --events --tab="/tpm/cg_orderdb" cg_orderdb
+```
+
 - file.sql 结构
 - file.txt 数据
 
@@ -974,45 +1028,56 @@ innodb事务不能隔离DDL操作
 ### 恢复mysqldump 备份的数据库
 
 - 单线程
-`# mysql -u -p dbname < backup.sql`
-`# mysql> source /tmp/backup.sql`
+```
+# mysql -u -p dbname < backup.sql
+# mysql> source /tmp/backup.sql
+```
 
-`# mysql -uroot -p -e "create database bak_orderdb"`
-`# mysql -uroot -p back_orderdb < cg_orderdb.sql`
+```
+# mysql -uroot -p -e "create database bak_orderdb"
+# mysql -uroot -p back_orderdb < cg_orderdb.sql
+```
 
 - 恢复数据库之后检测数据是否完整回复：select count...
 
 - 恢复删除的数据
-`insert into cg_orderdb.order_master (字段...) select a.* from bak_orderdb.order_master a left join cg_orderdb.order_master b on a.order_id=b.order_id where b.order_id is null`
+```
+insert into cg_orderdb.order_master (字段...) select a.* from bak_orderdb.order_master a left join cg_orderdb.order_master b on a.order_id=b.order_id where b.order_id is null
+```
 
 ### 全备数据恢复
-`# mysql -uroot -p -e"create database bak_orderdb"`
-`# mysql -uroot -p bak_orderdb < cg_orderdb.sql`
-
+```
+# mysql -uroot -p -e"create database bak_orderdb"
+# mysql -uroot -p bak_orderdb < cg_orderdb.sql
+```
 
 - 误删除生产数据
-`delete cg_orderdb.order_master limit 10`
+```
+delete cg_orderdb.order_master limit 10
+```
 
 - 备份数据库恢复数据
-`insert into cg_orderdb.order_master(...)
+```
+insert into cg_orderdb.order_master(...)
 select a.* from bak_orderdb.order_master a 
 left join cg_orderdb.order_master b
 on a.order_id=b.order_id
-where b.order_id is null`
+where b.order_id is null
+```
 
 ### -tab 备份数据恢复
-`# mysql -u root -p
+```
+# mysql -u root -p
 mysql>use crn
 mysql>show tables;
 mysql>source /tmp/cg_orderdb/region_info.sql;
-mysql>load data infile '/tmp/cg_orderdb/region_info.txt' into table region_info;`
-
+mysql>load data infile '/tmp/cg_orderdb/region_info.txt' into table region_info;
+```
 
 ### mysqldummp全备总结
 - 常用参数
 - 全库及部分库表备份
 - 利用备份文件进行数据恢复
-
 
 ## 如何进行时间点的恢复
 - 进行某一时间点的数据恢复
@@ -1022,9 +1087,9 @@ mysql>load data infile '/tmp/cg_orderdb/region_info.txt' into table region_info;
 	+ 具有指定时间点钱的一个全备
 	+ 具有自上次全备后指定时间点的所有二进制日志
 
-
 ### 模拟生产环境数据库操作
-`# mysqldump -ubackup -p --master-data=2 --single-transaction --routines --triggers --events mc_orderdb > mc_orderdb.sql`
+```
+# mysqldump -ubackup -p --master-data=2 --single-transaction --routines --triggers --events mc_orderdb > mc_orderdb.sql
 mysql> use mc_orderdb
 mysql> create table t(
 id int auto_increment not null,
@@ -1036,29 +1101,38 @@ mysql> insert into t(uid,cnt)
 select customer_id, sum(order_money) from order_master
 group by customer_id;
 
-`mysql> select count(*) from t`
+mysql> select count(*) from t
 
 delete from t limit 100;
-`select count(*) from t`
+select count(*) from t
+```
 
-
-### 恢复步骤：
-`# mysql -uroot -p mc_orderdb < mc_orderdb.sql`
-`# more mc_orderdb.sql`
-`# cd /home/mysql/sql_log`
+### 恢复步骤
+```
+# mysql -uroot -p mc_orderdb < mc_orderdb.sql
+# more mc_orderdb.sql
+# cd /home/mysql/sql_log
+```
 
 - 查看二进制日志删除数据
-`# mysqlbinlog --base64-output=decode-rows -vv --start-position=84882 --database=mc_orderdb mysql-bin.000011 | grep -B3 DELETE | more`
+```
+# mysqlbinlog --base64-output=decode-rows -vv --start-position=84882 --database=mc_orderdb mysql-bin.000011 | grep -B3 DELETE | more
+```
 
-`# mysqlbinlog --start-position=84882 --stop-position=169348
---database=mc_orderdb mysql-bin.000011 > mc_order_diff.sql`
+```
+# mysqlbinlog --start-position=84882 --stop-position=169348
+--database=mc_orderdb mysql-bin.000011 > mc_order_diff.sql
+```
 
-`# mysql -uroot -p mc_orderdb < mc_order_idff.sql`
+```
+# mysql -uroot -p mc_orderdb < mc_order_idff.sql
+```
 
-`# mysql -uroot -p
+```
+# mysql -uroot -p
 mysql> use mc_orderdb
-mysql> select count(*) from t;`
-
+mysql> select count(*) from t;
+```
 
 ### 基于时间点的恢复总结
 - 具有指定时间点前的 mysqldump 的备份
@@ -1068,23 +1142,33 @@ mysql> select count(*) from t;`
 - mysql 5.6版本之后，可以实时备份binlog
 
 - 配置
-`# grant replication slave on *.* to 'repl'@'127.0.0.1' identified by '123456';`
-`# hls -hl /home/mysql/sql_log`
-`# mkdir -p binlog_backup`
+```
+# grant replication slave on *.* to 'repl'@'127.0.0.1' identified by '123456';
+# hls -hl /home/mysql/sql_log
+# mkdir -p binlog_backup
+```
 
-`# mysqlbinlog --raw --read-from-remote-server \
+```
+# mysqlbinlog --raw --read-from-remote-server \
 --stop-never --host localhost --port 3306 \
--urepl -p123456 mysql-bin.000010`
+-urepl -p123456 mysql-bin.000010
+```
 
-`# cd binlog_back`
-`# ls -hl`
+```
+# cd binlog_back
+# ls -hl
+```
 
 
 - 刷新日志
-`mysql> flush logs;`
-`mysql> show binary logs;`
+```
+mysql> flush logs;
+mysql> show binary logs;
+```
 
-`# ls -hl binlog_back`
+```
+# ls -hl binlog_back
+```
 
 ## xtrabackup
 > 开源的在线热备份工具
@@ -1102,44 +1186,52 @@ mysql> select count(*) from t;`
 [xtrabackup下载地址](https://www.percona.com/downloads/XtraBackup/LATEST/) percona-xtrabackup-VERSION.el6.x86_64.rpm
 
 - 安装支持库
-`# yum install -y perl-DBD-MySQL.x86_64 perl-DBI.x86 perl-Time-HiRes.x86_64 perl-IO-Socket-SSL.noarch perl-TermReadKey.x86_64`
+```
+# yum install -y perl-DBD-MySQL.x86_64 perl-DBI.x86 perl-Time-HiRes.x86_64 perl-IO-Socket-SSL.noarch perl-TermReadKey.x86_64
 
-`# yum search libnuma`
 
-`# rpm -ivh percona-xtrabackup-VERSION.el6.x86_64.rpm`
+# yum search libnuma
+
+# rpm -ivh percona-xtrabackup-VERSION.el6.x86_64.rpm
+```
 
 - 命令
+```
 /usr/bin/innobackupex -> xtrabackup
 /usr/bin/xtrabackup
+```
 
 ### xtrabackup进行全备
 
-`# innobackupex --user=root -H 127.0.0.1 --password=pwd --parallel=2 /data/db_backup/`
+```
+# innobackupex --user=root -H 127.0.0.1 --password=pwd --parallel=2 /data/db_backup/
+```
 
 - parallel: 线程数
---no-timestamp 不按时间戳目录
-
+- --no-timestamp 不按时间戳目录
 
 ### xtrabackup进行全备恢复
-`# innobackupex --apply-log /path/to/BACKUP-DIR`
-`# mv /path/to/BACKUP-DIR /home/mysql/data`
-
+```
+# innobackupex --apply-log /path/to/BACKUP-DIR
+# mv /path/to/BACKUP-DIR /home/mysql/data
+```
 
 ### 增量备份
 > 先全备，后增量备份
 
+```
+mysql> create table t2(uid int(11))
 
-`mysql> create table t2(uid int(11))`
-
-`# innobackupex --user=root --password=pwd \
+# innobackupex --user=root --password=pwd \
 --incremental /home/db_backup/ \
 --incremental-basedir=/home/db_backup/back-dir`
 
 --incremental 全量备份目录
 --incremental-basedir: 上一次增量备份的目录
-
+```
 
 ### 增量备份恢复
+```
 innobackupex --apply-log --redo-only 全备目录
 
 innobackupex --apply-log --redo-only 全备目录 \
@@ -1148,22 +1240,23 @@ innobackupex --apply-log --redo-only 全备目录 \
 innobackupex --apply-log 全备目录
 
 mv /path/to/backup-dir /home/mysql/data
-
+```
 
 
 - 恢复第一次增量备份
-`# innobackupex --apply-log --redo-only /data/db_backup/全备目录名`
-`# innobackupex --apply-log --redo-only /data/db_backup`
-`# innobackupex --apply-log --redo-only /data/db_backup/全备目录名 
---incremental-dir=/data/db_backup/第一次增量备份目录`
-`# innobackupex --apply-log /data/db_backup/全备目录`
-`# mv /data/db_backup/第一次增量备份目录 /home/mysql/`
-`# /etc/init.d/mysqld stop`
-`# cd /home/mysql && rm -rf data`
-`# mv 增量备份目录 data`
-`# chown -R mysql:mysql data`
-`# /etc/init.d/mysqld start`
-
+```
+# innobackupex --apply-log --redo-only /data/db_backup/全备目录名
+# innobackupex --apply-log --redo-only /data/db_backup
+# innobackupex --apply-log --redo-only /data/db_backup/全备目录名 
+--incremental-dir=/data/db_backup/第一次增量备份目录
+# innobackupex --apply-log /data/db_backup/全备目录
+# mv /data/db_backup/第一次增量备份目录 /home/mysql/
+# /etc/init.d/mysqld stop
+# cd /home/mysql && rm -rf data
+# mv 增量备份目录 data
+# chown -R mysql:mysql data
+# /etc/init.d/mysqld start
+```
 
 ## 备份计划
 - 每天凌晨对数据库进行一次全备
@@ -1202,12 +1295,14 @@ mv /path/to/backup-dir /home/mysql/data
 
 ### 配置主从数据库服务器参数
 - Master 服务器
-`log_bin = /data/mysql/sql_log/mysql-bin 数据和日志分开存放
-server_id = 100`
-
+```
+log_bin = /data/mysql/sql_log/mysql-bin 数据和日志分开存放
+server_id = 100
+```
 
 - Slave 服务器
-`log_bin = /data/mysql/sql_log/mysql-bin 数据和日志分开存放
+```
+log_bin = /data/mysql/sql_log/mysql-bin 数据和日志分开存放
 server_id = 101
 relay_log = /data/mysql/sql_log/relay-bin
 read_only=on
@@ -1215,107 +1310,140 @@ super_read_ony = on # v5.7
 skip_slave_start=on 
 master_info_repository=TABLE
 relay_log_info_repository=TABLE
-`
+```
 
 ### MASTER 服务器上建立复制账号
 - 用于IO进程连接 Master 服务器获取 binlog 日志
 - 需要 `replication slave` 权限
 
-`create user 'repl'@'ip' identified by 'passwd'
-grant replication slave on *.* to 'repl'@'ip';`
+```
+create user 'repl'@'ip' identified by 'passwd'
+grant replication slave on *.* to 'repl'@'ip';
+```
 
 ### 初始化 Slave 数据
 - 建议主从数据库服务器采用相同的 MySQL 版本
 - 建议使用全备备份的方式初始化 slave 数据
 
-`# mysqldump --master-data=2 -uroot -p -A --single-transaction -R --triggers`
+```
+# mysqldump --master-data=2 -uroot -p -A --single-transaction -R --triggers
+```
 
 
 ### 启动基于日志点的复制链路
+```
 change master to
 MASTER_HOST='mster_host_ip',
 MASTER_USER='repl',
 MASTER_PASSWORD='PassWord',
 MASTER_LOG_FILE='mysql_log_file_name',
 MASTER_LOG_POS=xxx;
-
+```
 
 ### 主从复制演示
 - 192.168.3.100 - 主
 - 192.168.3.101 - 从
 
 1. 主服务器配置
+```
 log_bin = /data/mysql/sql_log/mysql-bin
 max_binlog_size = 1000M
 binlog_format = row
 expire_logs_days = 7
 sync_binlog = 1
 server-id=100
+```
 
 2. 从服务器配置
+```
 server-id=101
 relay_log=/data/mysql/sql_log/mysqld-relay-bin
 master_info_repository = TABLE
 relay_log_info_repository = TABLE
 read_only = on
+```
 
 3. 主服务器
-`mysql> show variables like '%server_id%'`
+```
+mysql> show variables like '%server_id%'
+```
+
 - 动态改变 server_id = 100
-`mysql> set global serer_id = 100;`
+```
+mysql> set global serer_id = 100;
+```
 
 4. 重启slave服务器
-`# /etc/init.d/myql restart`
+```
+# /etc/init.d/myql restart
+```
 
 5. master
 - 5.7 版本镜像方式安装有uuid文件，要删除此文件
 - 数据目录下 auto.cnf 
 
 - 创建账号
-`create user 'dba_repl'@'192.168.3.%' identified by '123456'
-grant replication slave on *.* to 'dba_repl'@'192.168.3.%';`
+```
+create user 'dba_repl'@'192.168.3.%' identified by '123456'
+grant replication slave on *.* to 'dba_repl'@'192.168.3.%';
+```
 
 - 全备数据库
-`# cd /data/db_backup/
-# mysqldump -uroot -p --single-transaction --master-data --triggers --routines --all-databases > all.sql`
+```
+# cd /data/db_backup/
+# mysqldump -uroot -p --single-transaction --master-data --triggers --routines --all-databases > all.sql
+```
 
-`# scp all.sql root@192.168.3.101:/root`
+```
+# scp all.sql root@192.168.3.101:/root
+```
 
 6. slave
-`# cd /root
+```
+# cd /root
 # ls -lh
 # more all.sql
-# mysql -uroot -p < all.sql`
+# mysql -uroot -p < all.sql
+```
 
 - 复制链路配置
-`# mysql -uroot -p`
+```
+# mysql -uroot -p
 mysql> show databases;
 mysql> change master master_host='192.168.3.100',
 master_user='dba_repl',
 master_password='123456',
 master_log_file='mysql-bin.000017',
 maeter_log_pos=663;
+```
 
 - all.sql备份文件中有 CHANGE MASTER TO MASTER_LOG_FILE..
 
-`mysql> start slave; 启动复制链路`
+```
+mysql> start slave; 启动复制链路
+```
 
-`mysql> show slave status \G`
+```
+mysql> show slave status \G
 Relay_Master_Log_File: mysql-bin.000017
 Slave_IO_Running: Yes
 Slave_SQL_Running: YES
-
+```
 
 7. master
+
+```
 `use mc_orderdb
+```
 > desc t1;
 > insert into t1 values(1);
 > select * from t1`
 
 8. slave
-`use mc_orderdb
+```
+use mc_orderdb
 > select * from t1`
-
+```
 
 
 ## 启动基于 GTID 的复制链路
@@ -1323,17 +1451,20 @@ Slave_SQL_Running: YES
 - GTID: 全局事务ID
 
 - master
-`gtid_mode = on
+```
+gtid_mode = on
 enforce-gtid-consistency
 log-slave-updates = on` 5.6 必须加上 5.7 不用添加
+```
 
 - slave
-`change master to 
+```
+change master to 
 	host
 	user
 	password`
 	**`master_auto_position = 1`**
-
+```
 
 ### GTID 复制的限制
 - 无法使用 create table ... select 建立表
@@ -1346,8 +1477,8 @@ log-slave-updates = on` 5.6 必须加上 5.7 不用添加
 - 根本上没有解决数据库单点问题
 - 主服务器宕机，需要手动切换从服务器，业务中断不能忍受
 
-- 解决：虚拟IP(vip)
-一个未分配给真实主机的IP，对外提供服务器的主机除了有一个真实IP外还有一个虚拟IP
+- 解决：虚拟IP(vip) 
+- 一个未分配给真实主机的IP，对外提供服务器的主机除了有一个真实IP外还有一个虚拟IP
 
 ### 引入 VIP 后的数据库架构
 - 设置虚拟IP方法
@@ -1366,20 +1497,21 @@ log-slave-updates = on` 5.6 必须加上 5.7 不用添加
 - 保证只有一个主提供服务
 - 另一个提供只读的服务
 
-master-master
+- master-master
 
 
 ### Master 数据库配置修改
+```
 auto_increment_increment = 2 
 auto_increment_offset = 1
-
 1,3,5,7,9...
-
+```
 ### 主备数据库配置
+```
 auto_increment_increment = 2
 auto_increment_offset = 2
 2,4,6,8,10...
-
+```
 
 ### Keeyalived 简介
 > 给予 ARRP 网络协议
@@ -1392,48 +1524,65 @@ auto_increment_offset = 2
 `# yum -y install keepalived -y`
 
 - 配置：`/etc/keepalived/keepalived.conf`
-
+```
 vrrp_script check_run {
 	script "/etc/keepalived/check_mysql.sh"
 	interval 5
 }
+```
 
 ### keepalived 演示
 - 主主配置
 
 1. master 配置
 - master: my.cnf
-`auto_increment_increment = 2
-auto_increment_offset = 1`
+```
+auto_increment_increment = 2
+auto_increment_offset = 1
+```
 
 - 修改global
-`# mysql -uroot -p
+```
+# mysql -uroot -p
 mysql> set global auto_increment_increment=2;
-mysql> set global auto_increment_offset=1;`
-- 推出
-`# mysql -uroot -p
-mysql> show variables like 'auto%'`
+mysql> set global auto_increment_offset=1;
+```
 
+- 推出
+```
+# mysql -uroot -p
+mysql> show variables like 'auto%'
+```
 
 2. backup 配置
 - my.cnf
-`auto_increment_increment = 2
-auto_increment_offset = 2`
+```
+auto_increment_increment = 2
+auto_increment_offset = 2
+```
 
-`# mysql -uroot -p
+```
+# mysql -uroot -p
 mysql> set global auto_increment_increment=2;
-mysql> set global auto_increment_offset=2;`
+mysql> set global auto_increment_offset=2;
+```
+
 - 推出
-`# mysql -uroot -p
-mysql> show variables like 'auto%'`
+```
+# mysql -uroot -p
+mysql> show variables like 'auto%'
+```
 
 - 查看账号
-`mysql>user mysql
-mysql>select user.host from user;`
-`> show variables like '%read_only%'`
-`mysql> show master status \G`
+```
+mysql>user mysql
+mysql>select user.host from user;
+> show variables like '%read_only%'
+mysql> show master status \G
+```
 
 3. master
+```
 mysql> change master to master host='192.168.3.101',
 master_user='dba_repl',
 master_password='123456',
@@ -1445,20 +1594,28 @@ master_log_file = 'mysql-bin.000003',
 master_log_pos='xxxx'
 上面两个值查看 backup 的show master status
 
-`> start slave;`
-`> show slave status \G`
+> start slave;
+> show slave status \G
 
+```
 
 4. keepalived 安装 
 - master
-`# yum -y install keepalived`
+```
+# yum -y install keepalived
+```
 
 - backup
-`# yum -y install keepalived`
+```
+# yum -y install keepalived
+```
 
-`# cd /etc/keepalived/
-# vim keepalived.conf`
+```
+# cd /etc/keepalived/
+# vim keepalived.conf
+```
 
+```
 vrrp_script check_run {
 	script "/etc/keepalived/check_mysql.sh"
 	interval 5
@@ -1466,10 +1623,14 @@ vrrp_script check_run {
 virtual_ipaddress {
 	192.168.3.99/24
 }
+```
 
 - 两个服务器都有： check_mysql.sh 有执行权限
-`# chmod a+x check_mysql.sh`
+```
+# chmod a+x check_mysql.sh
+```
 
+```
 #!/bin/bash
 MYSQL=which mysql
 MYSQL_HOST=127.0.0.1
@@ -1500,31 +1661,22 @@ if [ $MYSQL_OK -eq 0 ] && [ $CHECK_TIME -eq 0 ]
 	pkill keepalived
 exit 1
 fi
-
+```
 
 5. 启动keepalived进程
 
-- master
-`# /etc/init.d/keepalived start	`
+- master: `# /etc/init.d/keepalived start	`
 
-- slave
-`# /etc/init.d/keepalived start	`
+- slave : `# /etc/init.d/keepalived start	`
 
 
-- master
-`# ip addr show`
+- master :`# ip addr show`
 
-6. 模拟master 宕机
-`# /etc/init.d/mysql stop`
+6. 模拟master 宕机 : `# /etc/init.d/mysql stop`
 
-7. 查看 vip
-- master
-`# ip addr show`
+7. 查看 vip =>  master: `# ip addr show`
 
-- backup
-`# ipaddr show`
-
-
+- backup : `# ipaddr show`
 
 
 ## 如何解决读压力大问题
@@ -1543,11 +1695,11 @@ fi
 
 ### 如何进行读写分离
 1. SQL语句连接不同的服务器
-优点：完全有开发人员控制，实现更加的灵活
-由程序直接连接数据库，所以性能损耗比较少
-缺点：实时性要求比较高的数据，就不适合在从库上查询
-冯家开发的工作量，是程序代码更加复杂
-人为控制，容易出现错误
+- 优点：完全有开发人员控制，实现更加的灵活
+- 由程序直接连接数据库，所以性能损耗比较少
+- 缺点：实时性要求比较高的数据，就不适合在从库上查询
+- 冯家开发的工作量，是程序代码更加复杂
+- 人为控制，容易出现错误
 
 **库存必须在主库上查询** 超卖情况
 
@@ -1602,6 +1754,8 @@ fi
 
 - 101 LVS 脚本编写
 `# vim /etc/inid.d/lvsrs`
+
+```
 #!/bin/bash
 VIP=192.168.3.98
 . /etc/rc.d/init.d/functions
@@ -1642,10 +1796,13 @@ echo "Usage: $0 {start|stop|status}"
 exit 1
 esac
 exit 0`
+```
 
 
+```
 101]# /etc/init.d/lvsrs start
 102]# /etc/init.d/lvsrs start
+```
 
 
 
@@ -1804,18 +1961,23 @@ exit 0`
 
 ##### 已提交读 与 可重复读区别
 - 进程1
+```
 > select * from t; id={1,3,5,7,9}
 > show variables like '%iso%'
 > begin;
 > select * from t　where id < 7;
 id={1,3,5}
+```
 
 - 进程2
+```
 > begin;
 > insert into t values(2)
 > commit;
+```
 
 - 进程1
+```
 > select * from t where id <7
 id={1,3,5} 看不到插入的2
 > commit;
@@ -1823,23 +1985,27 @@ id={1,3,5} 看不到插入的2
 > show variables like '%iso%'
 > select * from t where id < 7
 id={1,3,5,2}
-
+```
 
 - 进程2
+```
 > begin;
 > insert into t values(4)
 > commit;
-
+```
 
 - 进程1
+```
 > select * from t where id <7
-id={1,3,5,2,4} 看到插入的 4
+```
+- id={1,3,5,2,4} 看到插入的 4
 
 
 
 #### 事务的持久性(durability)
 > 事务提交，其所做的修改就会永久保存到数据库中
-此时及时系统崩溃，已经提交的修改数据也不会丢失
+
+- 此时及时系统崩溃，已经提交的修改数据也不会丢失
 
 
 ### 什么事大事务
@@ -1887,8 +2053,8 @@ id={1,3,5,2,4} 看到插入的 4
 - 频率和数量
 
 - Inter Xeon E7-8890 v2
-主频：2.5GHz, 核心数量:18核36线程
-售价：44488元
+	+ 主频：2.5GHz, 核心数量:18核36线程
+	+ 售价：44488元
 
 ### CPU密集型的吗？
 - SQL语句处理速度 - 使用更快的CPU
@@ -1973,7 +2139,7 @@ id={1,3,5,2,4} 看到插入的 4
 
 ### raid增强传统及其硬盘的性能
 > 磁盘冗余队列的简称
- 把多个容量较小的磁盘组成一组容量更大的磁盘，并提供数据冗余来保证数据完整性的技术
+- 把多个容量较小的磁盘组成一组容量更大的磁盘，并提供数据冗余来保证数据完整性的技术
 
 
 - ![RAID 0](./images/raid0.png)
@@ -2016,7 +2182,7 @@ id={1,3,5,2,4} 看到插入的 4
 	+ 提花传统磁盘而不需要任何改变
 	+ SATA 3.0 => 6Gbps
 	+ SATA 2.0 => 3Gbps
--　支持 RAID
+- 支持 RAID
 
 #### PCIe卡(PCI-E SSD)特点
 - 无法使用SATA接口，使用PCI接口）
@@ -2033,16 +2199,16 @@ id={1,3,5,2,4} 看到插入的 4
 > 两种外部文件存储设备加载到服务器上的方法
 
 - SAN: Storage Area Network
-SAN设备通过光纤链接到服务器，设备通过块接口访问，服务器可以将其当作硬盘使用
+> SAN设备通过光纤链接到服务器，设备通过块接口访问，服务器可以将其当作硬盘使用
 
 
 - NAS: Network-Attached Storage
-NAS设备使用网络连接，通过基于文件的协议和NFS 或 SMB来访问
+> NAS设备使用网络连接，通过基于文件的协议和NFS 或 SMB来访问
 
-大量顺序读写
-不如本地RAID磁盘
-随机读写慢
-I/O 合并
+- 大量顺序读写
+- 不如本地RAID磁盘
+- 随机读写慢
+- I/O 合并
 
 #### 网络存储使用的场景
 - 顺序I/O 适合MySQL
@@ -2104,54 +2270,62 @@ I/O 合并
 
 ### 内核相关参数: `/etc/sysctl.conf`
 
-对于一个TCP连接，Server与Client需要通过三次握手来建立网络连接.当三次握手成功后, 可以看到端口的状态由 LISTEN 转变为 ESTABLISHED, 接着这条链路上就可以开始传送数据了
-每一个处于监听(Listen)状态的端口, 都有自己的监听队列 
+> 对于一个TCP连接，Server与Client需要通过三次握手来建立网络连接.当三次握手成功后, 可以看到端口的状态由 LISTEN 转变为 ESTABLISHED, 接着这条链路上就可以开始传送数据了
+- 每一个处于监听(Listen)状态的端口, 都有自己的监听队列 
 
 - 收到请求但是没有完成 accept() 的连接总数上限
 
 
 - 每个 listen 端口队列长度
-`net.core.somaxconn=65535
+```
+net.core.somaxconn=65535
 net.core.netdev_max_backlog=65535
-net.ipv4.tcp_max_syn_backlog=65535`
+net.ipv4.tcp_max_syn_backlog=65535
+```
 
-
-`echo 1000 >/proc/sys/net/core/somaxconn`
+```
+echo 1000 >/proc/sys/net/core/somaxconn`
+```
 
 - 等待状态- TCP 连接回收
-`net.ipv4.tcp_fin_timeout = 10
+```
+net.ipv4.tcp_fin_timeout = 10
 net.ipv4.tcp_tw_reuse = 1
-net.ipv4.tcP-tw_recycle = 1`
+net.ipv4.tcP-tw_recycle = 1
+```
 
 - TCP 连接接受和发送缓冲区大小默认值和最大值
-`net.core.wmem_default = 87380
+
+```net.core.wmem_default = 87380
 net.core.wmem_max = 16777316
 net.core.rmem_default = 87380
 net.core.rmem_max = 16777216`
+```
 
 - 失效连接TCP数量，加快资源回收效率
-`net.ipv4.tcp_keepalive_time = 120 keepalive时间间隔：秒
+```
+net.ipv4.tcp_keepalive_time = 120 keepalive时间间隔：秒
 net.ipv4.tcp_keepalive_intvl = 30 
-net.ipv4.tcp_keepalive_probes = 3`
+net.ipv4.tcp_keepalive_probes = 3
+```
 
 - 内存参数
 - 4G
 `kernel.shmmax = 429467295`
 - 定义单个共享内存段的最大值
-参数设置足够大，以便能在一个共享内存段下容纳整个的InnoDB缓冲池的大小
+- 参数设置足够大，以便能在一个共享内存段下容纳整个的InnoDB缓冲池的大小
 
 - 过低，会存储共享多个内存段，导致系统性能下降
 
 - 64 OS：最大值为物理内存值-1byte
 - 建议值位大于物理内存的一半，一般取值大于InnoDB缓冲池的大小即可，可以取物理内存-1byte
 
-`vm.swappiness = 0`
-这个参数当内存不足时会对性能产生比较明显的影响
+`vm.swappiness = 0` 这个参数当内存不足时会对性能产生比较明显的影响
 
 
 - Linux 系统内存区
 `# free -m`
-OS 没有足够的内存时就会将一些虚拟内存写到磁盘的交换分区中这样就会发生内存交换
+> OS 没有足够的内存时就会将一些虚拟内存写到磁盘的交换分区中这样就会发生内存交换
 
 - 交换分区带来风险
 	+ 降低 OS的性能
@@ -2165,13 +2339,15 @@ OS 没有足够的内存时就会将一些虚拟内存写到磁盘的交换分�
 	+ 打开文件数的限制
 	
 - 加到 limit.conf 文件末尾
-`* soft nofile 65525
-* hard nofile 65535`
-`*`: 对所有用户有效
-soft: 当前系统生效的设置（不能比hard高）
-hard: 系统中所能设定的最大值
-nofile: 所限制的资源是打开文件的最大数目
-65535： 限制的数量
+```
+* soft nofile 65525
+* hard nofile 65535
+```
+	+ `*`: 对所有用户有效
+	+ soft: 当前系统生效的设置（不能比hard高）
+	+ hard: 系统中所能设定的最大值
+	+ nofile: 所限制的资源是打开文件的最大数目
+	+ 65535： 限制的数量
 
 - 可打开的文件数量增加到65535个亿保证可以打开足够多的文件句柄
 - 重启系统才能生效
@@ -2182,18 +2358,19 @@ nofile: 所限制的资源是打开文件的最大数目
 `# noop anticipatory deadline [cfq]`
 
 - cfq: 公平策略(桌面级别没有问题)
-cfq 需要插入不必要的请求，导致很差的响应时间
+> cfq 需要插入不必要的请求，导致很差的响应时间
+
 - mysql服务器使用
 
 - **noop**: 电梯式调度策略
-实现了一个FIFO队列，向电梯的工作方法一样对I/O请求进行组织，当有一个新的请求到来时，他将请求合并到最近的请求之后，一次来保证请求统一介质。NOOP 倾向饿死读而利于写，因此NOOP对于**内存设备、RAM及嵌入式系统**是最好的选择
+> 实现了一个FIFO队列，向电梯的工作方法一样对I/O请求进行组织，当有一个新的请求到来时，他将请求合并到最近的请求之后，一次来保证请求统一介质。NOOP 倾向饿死读而利于写，因此NOOP对于**内存设备、RAM及嵌入式系统**是最好的选择
 
 
 - **deadline**(截至时间调度策略)
-确保了一个截止时间内服务请求，这个截至时间是的可调整的，而默认读期限短于写期限。这样就防止了写操作因为不能被读取而饿死的现象，Deadline对数据库类应用是最好的选择。
+> 确保了一个截止时间内服务请求，这个截至时间是的可调整的，而默认读期限短于写期限。这样就防止了写操作因为不能被读取而饿死的现象，Deadline对数据库类应用是最好的选择。
 
 - **anticipatory**(预料I/O调度策略)
-本质上与Deadline一样，但在最后一次读操作后，要等待6ms, 才能继续进行对其他I/O请求进行调度。他会在每个6ms中插入新的I/O操作，而会将一些小写入流合并成一个大写入流，用写入延时换取最大的写入吞吐量。AS适合于写入较多的环境，比如文件服务器，AS数据库环境表现很差。
+> 本质上与Deadline一样，但在最后一次读操作后，要等待6ms, 才能继续进行对其他I/O请求进行调度。他会在每个6ms中插入新的I/O操作，而会将一些小写入流合并成一个大写入流，用写入延时换取最大的写入吞吐量。AS适合于写入较多的环境，比如文件服务器，AS数据库环境表现很差。
 
 
 `echo deadline > /sys/block/sda/queue/scheduler`
@@ -2210,20 +2387,20 @@ cfq 需要插入不必要的请求，导致很差的响应时间
 	+ xfs: 比ext系列 性能更高
 
 
-ext3/4 系统的挂载参数(/etc/fstab)
-data=writeblack | ordered | journal
+- ext3/4 系统的挂载参数(/etc/fstab)
+- data=writeblack | ordered | journal
 
-**writeback**: 元数据和数据不是同步（**innode最好的选择**）
+- **writeback**: 元数据和数据不是同步（**innode最好的选择**）
 
-**ordered**: 只记录元数据
-但提供了一致性的保证，在写元数据之前会先写数据，使他们保持一致
+- **ordered**: 只记录元数据
+- 但提供了一致性的保证，在写元数据之前会先写数据，使他们保持一致
 
-journal: 原子日志行为，将数据最终写入前，先记录到日志当中。对于INNoDB 不适合
+- journal: 原子日志行为，将数据最终写入前，先记录到日志当中。对于INNoDB 不适合
 
 - noatime,nodiratime
-禁止记录文件的访问时间和读取目录的时间
-可以减少些的操作
-`/dev/sda1/ext4 noatime,nodiratime,data=writeback 1 1`
+- 禁止记录文件的访问时间和读取目录的时间
+- 可以减少些的操作
+- `/dev/sda1/ext4 noatime,nodiratime,data=writeback 1 1`
 
 
 
@@ -2242,7 +2419,7 @@ journal: 原子日志行为，将数据最终写入前，先记录到日志当�
 - 存储引擎针对于表（一个库中的不同国标可以使用不同的存储引擎）
 
 ## MyISAM
-MySQL 5.5- 默认的存储引擎
+> MySQL 5.5- 默认的存储引擎
 
 - 系统表
 - 临时表：在排序、分组等操作中，当数量超过一定的大小之后，由查询优化器建立的临时表
@@ -2263,11 +2440,15 @@ MySQL 5.5- 默认的存储引擎
 	+ 检查：`check table tablename`
 	+ 修复：`repaire table tablename`	
 
-`mysql> create table myisam(id int, varchar(10)) engine=myisam
-# ls -l mysam`
+```
+mysql> create table myisam(id int, varchar(10)) engine=myisam
+# ls -l mysam
+```
 
-`mysql> check table myisam`
-`mysql> repaire table myisam`
+```
+mysql> check table myisam
+mysql> repaire table myisam
+```
 
 - myisam 修复（需要停止mysql服务）
 `# myisamchk`
@@ -2294,6 +2475,57 @@ MySQL 5.5- 默认的存储引擎
 - 只读类应用
 - 空间类应用
 
+## InnoDB
+> MySQL 5.5 及之后版本默认存储引擎
+
+- InnoDB使用表空间 数据存储
+- innodb_file_per_table
+	+ on: 独立表空间：tablename.ibd
+	+ off: 系统表空间：ibdataX
+
+- 查看innodb_file_per_table
+```
+show variables like 'innodb_file_per_table'
+```
+
+```
+CREATE TABLE myinnodb(
+	id int,
+	c1 varchar(10)
+) engine='innodb'
+
+# ls -lh myinnodb*
+
+```
+```
+set global innodb_file_per_table=off;
+show variables like 'innodb_file_per_table';
+create table myinnodb_g(
+	id int,
+	c1 varchar(10)
+) engine='innodb'
+
+# ls -lh myinnodb*
+
+ 文件存储在 ibdataX中
+
+```
+
+### 系统表空间和独立表空间要如何选择
+- 比较
+	+ 系统表空间无法简单的收缩文件大小
+	+ 独立表空间可以通过 optimize table 命令收缩文件大小
+- IO性能
+	+ 系统表空间会产生 IO 瓶颈
+	+ 独立表空间可以同时向多个文件刷新数据
+- 建议
+	+ 对 InnoDB 使用独立表空间
+
+- 表转移的步骤： 把原来存储在与系统表空间中的表转移到独立表空间中的方法
+1. 使用 mysqldump 导出所有数据库表数据
+2. 停止 mysql 服务，修改参数，并删除 InnoDB 相关文件
+3. 重启 MySQL 服务，重建 InnoDB 系统表空间
+4. 重新导入数据
 
 
 
