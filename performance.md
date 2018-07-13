@@ -774,6 +774,205 @@ select timestampdiff(second,@d,now());
 
 如果是用命令行来执行的话，有一点要注意，就是在 `select timestampdiff(second,@d,now());`后面，一定要多`copy`一个空行，不然最后一个sql要你自己按回车执行，这样就不准了。
 
+### 建立表
+
+[SQL 文件](./source/bannerTest.sql)
+
+### 插入100万条测试数据
+
+[PHP 执行文件](./source/index.php)
+
+### 第一种情况，MyISAM引擎， hits_time_i/hits_time_t/hits_time_d这三个字段都没有索引
+
+![设置 profiling](./images/set-profiling.png)
+
+搜索 2017-05-01 00:00:00(1493568000) ~ 2017-08-01 00:00:00(1501516800) 数据
+
+**int 数据类型数值和 `UNIX_TIMESTAMP` 函数比较**: 效率还可以
+
+``` mysql
+mysql> SELECT SQL_NO_CACHE COUNT(id) FROM `banner_hits_myi` WHERE hits_time_i > 1493568000 AND hits_time_i < 1501516800;
++-----------+
+| COUNT(id) |
++-----------+
+|    428671 |
++-----------+
+1 row in set
+
+mysql> SELECT SQL_NO_CACHE COUNT(id) FROM `banner_hits_myi` WHERE hits_time_i > UNIX_TIMESTAMP('2017-05-01 00:00:00') AND hits_time_i < UNIX_TIMESTAMP('2017-08-01 00:00:00');
++-----------+
+| COUNT(id) |
++-----------+
+|    428671 |
++-----------+
+1 row in set
+
+mysql> SHOW PROFILES;
++----------+------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Query_ID | Duration   | Query                                                                                                                                                     |
++----------+------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------+
+|        1 | 0.1631344 | SELECT SQL_NO_CACHE COUNT(id) FROM `banner_hits_myi` WHERE hits_time_i > 1493568000 AND hits_time_i < 1501516800                                                       |
+|        2 |  0.16506674 | SELECT SQL_NO_CACHE COUNT(id) FROM `banner_hits_myi` WHERE hits_time_i > UNIX_TIMESTAMP('2017-05-01 00:00:00') AND hits_time_i < UNIX_TIMESTAMP('2017-08-01 00:00:00') |
++----------+------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------+
+2 rows in set
+```
+
+0.1631344(数值比较) ： 0.16506674(UNIX_TIMESTAMP 内置函数比较)
+
+**timestamp 类型，使用 `UNIX_TIMESTAMP`内置函数查询率很高几乎和 `int` 相当；直接和日期比较效率低**
+
+``` mysql
+0.68288615 | SELECT SQL_NO_CACHE COUNT(id) FROM `banner_hits_myi` WHERE hits_time_t > '2017-05-01 00:00:00' AND hits_time_t < '2017-08-01 00:00:00'                                 |
+0.1829902 | SELECT SQL_NO_CACHE COUNT(id) FROM `banner_hits_myi` WHERE UNIX_TIMESTAMP(hits_time_t) > 1493568000 AND UNIX_TIMESTAMP(hits_time_t) < 1501516800
+
+```
+
+**对于datetime类型，使用 `UNIX_TIMESTAMP` 内置函数查询效率很低，不建议；直接和日期比较，效率还行**
+
+``` mysql
+0.24743755 | SELECT SQL_NO_CACHE COUNT(id) FROM `banner_hits_myi` WHERE hits_time_d > '2017-05-01 00:00:00' AND hits_time_d < '2017-08-01 00:00:00'                                 |
+1.03293499 | SELECT SQL_NO_CACHE COUNT(id) FROM `banner_hits_myi` WHERE UNIX_TIMESTAMP(hits_time_d) > 1493568000 AND UNIX_TIMESTAMP(hits_time_d) < 1501516800  
+```
+
+### 第二种情况，MyISAM引擎， d_int/d_timestamp/d_datetime这三个字段都有索引
+
+**对于int类型，有索引的效率反而低了，飘易的猜测是由于设计的表结构问题，多了索引，反倒多了一个索引查找**
+
+``` mysql
+0.16651908 | SELECT SQL_NO_CACHE COUNT(id) FROM `banner_hits_myi_index` WHERE hits_time_i > 1493568000 AND hits_time_i < 1501516800                                                       |
+0.16491253 | SELECT SQL_NO_CACHE COUNT(id) FROM `banner_hits_myi_index` WHERE hits_time_i > UNIX_TIMESTAMP('2017-05-01 00:00:00') AND hits_time_i < UNIX_TIMESTAMP('2017-08-01 00:00:00') |
+```
+
+**对于timestamp类型，有没有索引比较日期性能差，UNIX_TIMESTAMP 性能好**
+
+``` mysql
+0.6756697 | SELECT SQL_NO_CACHE COUNT(id) FROM `banner_hits_myi_index` WHERE hits_time_t > '2017-05-01 00:00:00' AND hits_time_t < '2017-08-01 00:00:00'                                 |
+0.18334677 | SELECT SQL_NO_CACHE COUNT(id) FROM `banner_hits_myi_index` WHERE UNIX_TIMESTAMP(hits_time_t) > 1493568000 AND UNIX_TIMESTAMP(hits_time_t) < 1501516800  
+```
+
+**对于datetime类型，有索引反而效率低了**
+
+``` mysql
+0.25610888 | SELECT SQL_NO_CACHE COUNT(id) FROM `banner_hits_myi_index` WHERE hits_time_d > '2017-05-01 00:00:00' AND hits_time_d < '2017-08-01 00:00:00'                                 |
+1.0239384 | SELECT SQL_NO_CACHE COUNT(id) FROM `banner_hits_myi_index` WHERE UNIX_TIMESTAMP(hits_time_d) > 1493568000 AND UNIX_TIMESTAMP(hits_time_d) < 1501516800  
+```
+
+### 第三种情况，InnoDB引擎， d_int/d_timestamp/d_datetime这三个字段都没有索引
+
+**InnoDB引擎的查询效率明细比MyISAM引擎的低，低3倍+**
+
+``` mysql
+0.45530221 | SELECT SQL_NO_CACHE COUNT(id) FROM `banner_hits_inn` WHERE hits_time_i > 1493568000 AND hits_time_i < 1501516800                                                             |
+0.19749118 | SELECT SQL_NO_CACHE COUNT(id) FROM `banner_hits_inn` WHERE hits_time_i > UNIX_TIMESTAMP('2017-05-01 00:00:00') AND hits_time_i < UNIX_TIMESTAMP('2017-08-01 00:00:00')
+```
+
+**对于timestamp类型，使用UNIX_TIMESTAMP内置函数查询效率同样高出直接和日期比较。**
+
+``` mysql
+0.71391034 | SELECT SQL_NO_CACHE COUNT(id) FROM `banner_hits_inn` WHERE hits_time_t > '2017-05-01 00:00:00' AND hits_time_t < '2017-08-01 00:00:00'                                       |
+0.21356422 | SELECT SQL_NO_CACHE COUNT(id) FROM `banner_hits_inn` WHERE UNIX_TIMESTAMP(hits_time_t) > 1493568000 AND UNIX_TIMESTAMP(hits_time_t) < 1501516800  
+```
+
+**对于datetime类型，直接和日期比较，效率高于UNIX_TIMESTAMP内置函数查询。**
+
+``` mysql
+0.27987128 | SELECT SQL_NO_CACHE COUNT(id) FROM `banner_hits_inn` WHERE hits_time_d > '2017-05-01 00:00:00' AND hits_time_d < '2017-08-01 00:00:00'
+1.11265201 | SELECT SQL_NO_CACHE COUNT(id) FROM `banner_hits_inn` WHERE UNIX_TIMESTAMP(hits_time_d) > 1493568000 AND UNIX_TIMESTAMP(hits_time_d) < 1501516800
+```
+
+### 第四种情况: InnoDB引擎， d_int/d_timestamp/d_datetime这三个字段都有索引
+
+**InnoDB引擎有了索引之后，性能较MyISAM有大幅提高。**
+
+``` mysql
+0.20441357 | SELECT SQL_NO_CACHE COUNT(id) FROM `banner_hits_inn_index` WHERE hits_time_i > 1493568000 AND hits_time_i < 1501516800
+0.09184275 | SELECT SQL_NO_CACHE COUNT(id) FROM `banner_hits_inn_index` WHERE hits_time_i > UNIX_TIMESTAMP('2017-05-01 00:00:00') AND hits_time_i < UNIX_TIMESTAMP('2017-08-01 00:00:00')
+```
+
+**对于timestamp类型，有了索引，反倒不建议使用MYSQL内置函数UNIX_TIMESTAMP查询了**
+
+``` mysql
+0.45242832 | SELECT SQL_NO_CACHE COUNT(id) FROM `banner_hits_inn_index` WHERE hits_time_t > '2017-05-01 00:00:00' AND hits_time_t < '2017-08-01 00:00:00'
+0.26492405 | SELECT SQL_NO_CACHE COUNT(id) FROM `banner_hits_inn_index` WHERE UNIX_TIMESTAMP(hits_time_t) > 1493568000 AND UNIX_TIMESTAMP(hits_time_t) < 1501516800
+```
+
+**对于datetime类型，同样有了索引，反倒不建议使用MYSQL内置函数UNIX_TIMESTAMP查询了。**
+
+``` mysql
+0.14074116 | SELECT SQL_NO_CACHE COUNT(id) FROM `banner_hits_inn_index` WHERE hits_time_d > '2017-05-01 00:00:00' AND hits_time_d < '2017-08-01 00:00:00'
+1.09769958 | SELECT SQL_NO_CACHE COUNT(id) FROM `banner_hits_inn_index` WHERE UNIX_TIMESTAMP(hits_time_d) > 1493568000 AND UNIX_TIMESTAMP(hits_time_d) < 1501516800
+```
+
+<table border="1">
+<tr>
+  <th colspan="2">查询时间20次(秒)</th>
+  <th colspan="2" align="center">int</th>
+  <th colspan="2" align="center">timestamp</th>
+  <th colspan="2" align="center">datetime</th>
+</tr>
+<tr>
+<tr>
+  <td></td>
+  <td></td>
+  <td>UNIX_TIMESTAMP</td>
+  <td>直接和时间比较</td>
+  <td>UNIX_TIMESTAMP</td>
+  <td>直接和时间比较</td>
+  <td>UNIX_TIMESTAMP</td>
+  <td>直接和时间比较</td>
+</tr>
+<tr>
+<td>MyISAM</td>
+<td>无索引</td>
+<td style="background:green;color:#fff">0.16506674</td>
+<td style="background:green;color:#fff">0.1631344</td>
+<td style="background:green;color:#fff">0.1829902</td>
+<td style="background:orange;color:#fff">0.68288615</td>
+<td style="background:red;color:#fff">1.03293499</td>
+<td style="background:blue;color:#fff">0.24743755</td>
+</tr>
+<td>MyISAM</td>
+<td>有索引</td>
+<td style="background:green;color:#fff">0.16491253</td>
+<td style="background:green;color:#fff">0.16651908</td>
+<td style="background:green;color:#fff">0.18334677 </td>
+<td style="background:orange;color:#fff">0.6756697</td>
+<td style="background:red;color:#fff">1.0239384</td>
+<td style="background:blue;color:#fff">0.25610888</td>
+</tr>
+<tr>
+<td>InnoDB</td>
+<td>无索引</td>
+<td style="background:blue;color:#fff">0.19749118</td>
+<td style="background:orange;color:#fff">0.45530221</td>
+<td style="background:blue;color:#fff">0.21356422</td>
+<td style="background:orange;color:#fff">0.71391034</td>
+<td style="background:red;color:#fff">1.11265201</td>
+<td style="background:blue;color:#fff">0.27987128</td>
+</tr>
+<td>InnoDB</td>
+<td>有索引</td>
+<td style="background:green;color:#fff">0.09184275</td>
+<td style="background:blue;color:#fff">0.20441357</td>
+<td style="background:blue;color:#fff">0.26492405</td>
+<td style="background:orange;color:#fff">0.45242832</td>
+<td style="background:red;color:#fff">1.09769958</td>
+<td style="background:green;color:#fff">0.14074116</td>
+</tr>
+</table>
+
+对于MyISAM引擎，不建立索引的情况下（推荐），效率从高到低： int(时间) > UNIX_TIMESTAMP(int) > UNIX_TIMESTAMP(timestamp) > datetime（直接和时间比较）>timestamp（直接和时间比较）>UNIX_TIMESTAMP(datetime) 。
+
+对于MyISAM引擎，建立索引的情况下，效率从高到低： UNIX_TIMESTAMP(timestamp) > int > datetime（直接和时间比较）>timestamp（直接和时间比较）>UNIX_TIMESTAMP(datetime) 。
+
+对于InnoDB引擎，没有索引的情况下(不建议)，效率从高到低：int > UNIX_TIMESTAMP(timestamp) > datetime（直接和时间比较） > timestamp（直接和时间比较）> UNIX_TIMESTAMP(datetime)。
+
+对于InnoDB引擎，建立索引的情况下，效率从高到低：int > datetime（直接和时间比较） > timestamp（直接和时间比较）> UNIX_TIMESTAMP(timestamp) > UNIX_TIMESTAMP(datetime)。
+
+一句话，对于MyISAM引擎，采用 UNIX_TIMESTAMP(timestamp) 比较；对于InnoDB引擎，建立索引，采用 int 或 datetime直接时间比较。
+
+
+
 ## MySQL 基准测试-测量系统性能
 
 ### 基准测试
