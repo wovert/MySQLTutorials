@@ -674,7 +674,7 @@ mysql> repaire table myisam
 - 只读类应用
 - 空间类应用
 
-### InnoDB
+### InnoDB 引擎
 
 > MySQL 5.5 及之后版本默认存储引擎
 
@@ -722,11 +722,101 @@ create table myinnodb_g(
 - 建议
   - 对 InnoDB 使用独立表空间
 
-- 表转移的步骤： 把原来存储在与系统表空间中的表转移到独立表空间中的方法
+表转移的步骤： 把原来存储在与系统表空间中的表转移到独立表空间中的方法
+
 1. 使用 mysqldump 导出所有数据库表数据
 2. 停止 mysql 服务，修改参数，并删除 InnoDB 相关文件
 3. 重启 MySQL 服务，重建 InnoDB 系统表空间
 4. 重新导入数据
+
+#### innodb 数据字典信息
+
+#### Undo 回滚段（mysql-5.6+开始支持）
+
+### InnoDB 存储引擎的特性
+
+- InnoDB 是一种事务性存储引擎
+- 完全支持事务的 ACID 特性
+- Redo Log 和 Undo Log
+
+``` mysql
+
+redo log 是已经提交的事务
+redo log 缓冲区大小，字节单位；每个一秒刷新，所有不需要配置太大
+> show variables like 'innodb_log_buffer_size';
+
+ib_logfile[0-9]* 是
+
+> show variables like 'innodb_log_files_in_group'; 输出value 为2,生成2个 ib_logfile[0-9] 文件
+
+Undo log 是未提交的事务；rollback 是在 undo log 日志文件中查找
+
+```
+
+- innodb 支持行级锁
+  - 行级锁可以最大程度的支持并发
+  - 行级锁是有存储引擎层实现的
+
+#### 什么事锁
+
+> 管理共享资源的并发访问；锁用于实现事务的隔离性
+
+- 锁的类型
+  - 共享锁（读锁）
+  - 独占锁（写锁）
+
+|  | 写锁 | 读锁 |
+|--|-----| ---- |
+| 写锁 | 不兼容 | 不兼容 |
+| 读锁 | 不兼容 | 兼容 |
+
+``` client1
+> desc myinnodb;
+> insert into myinnodb values(2,'bb'),(3,'cc');
+> select * from myinnodb;
+> begin;
+> update myinnodb set c1='bbbb' where id=2; 独占锁
+```
+
+``` client2
+> use test;
+> select * from myinnodb where id = 2; 查看的是 undo log 日志的内容
+bb 说明没有更新
+
+```
+
+- 锁的粒度
+  - 表级锁
+  - 行级锁（开销比表级锁多）
+
+表级锁演示
+
+``` client1
+> rollback;
+> show create table myinnodb;
+> lock table myinnodb write; 表级的独占锁
+
+```
+
+··· client2
+> select * from myinnodb; 这个操作被阻塞了
+···
+
+``` client1
+> unlock tables;
+```
+
+··· client2
+> select * from myinnodb; 这个操作可以运行
+···
+
+
+
+
+
+
+
+
 
 ## INT/TIMESTAMP/DATETIME 性能效率比较
 
