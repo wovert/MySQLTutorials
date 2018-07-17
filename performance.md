@@ -733,7 +733,7 @@ create table myinnodb_g(
 
 #### Undo 回滚段（mysql-5.6+开始支持）
 
-### InnoDB 存储引擎的特性
+#### InnoDB 存储引擎的特性
 
 - InnoDB 是一种事务性存储引擎
 - 完全支持事务的 ACID 特性
@@ -810,7 +810,7 @@ bb 说明没有更新
 > select * from myinnodb; 这个操作可以运行
 ···
 
-
+#### ？？？
 
 
 
