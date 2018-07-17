@@ -47,6 +47,7 @@
 - 数据库操作行为规范(运维)
 
 ### 数据库命名规范
+
 - 所有数据库对象名称是`小写字母并用下划线`分割（Linux OS 区分大小写）
 - 所有数据库对象名称禁止使用 [MySQL保留关键字](https://dev.mysql.com/doc/refman/5.7/en/keywords.html)
 - 所有数据库对象名称必须要`见名识义`，并且最好不超过32个字符
@@ -690,6 +691,7 @@ partitions 4
 - 插入数据时跟正常插入数据方式一样的
 
 ## hash分区表可用的函数
+
 - abs()
 - dayofmonth()
 - datediff()
@@ -749,6 +751,7 @@ partition by range (customer_id) (
 
 
 ## List 分区
+
 - 按分区键的列表进行分区
 - 同范围分区一样，各分区的列表值不能重复
 - 每一行数据必须能找到对应的分区列表，否则数据插入失败
@@ -772,6 +775,7 @@ partition by list (login_type) (
 ## 数据库解决方案
 
 ## 如何对评论进行分页展示
+
 ```
 explain select customer_id, title, content from product_comment where audit_status=1 and product_id = 199727 limit 0,5;
 ```
@@ -780,6 +784,7 @@ explain select customer_id, title, content from product_comment where audit_stat
 - 查询扫描的数据行数
 
 ### 执行计划 explain
+
 - ID: 表示执行select语句的顺序
   - ID 值相同时，执行顺序由上至下
   - ID 值越大优先级越高，越先被执行
@@ -868,6 +873,7 @@ on a.comment_id = t.comment_id;
 ## 删除重复数据
 
 ### 同一订单同一商品的重复评论
+
 1. 查看是否存在对于订单同一商品的重复评论
 2. 备份 product_comment 表
 3. 删除同一订单的重复评论
@@ -941,6 +947,7 @@ on a.customer_id = b.customer_id;
 - Query_time Lock_time Rows_send(查询结果返回行数) Rows_examined: 10000(扫描行数)
 
 ### 如何分析慢查日志
+
 ```
 mysqldumpslow slow-mysql.log
 ```
@@ -962,17 +969,20 @@ mysqldumpslow slow-mysql.log
   - 第三方工具： XtraBackup
 
 ### 数据库备份
+
 - 全量备份：整个数据库的完整备份
 - 增量备份：上次备份的基础上，对于更改数据进行的备份
   - mysqldump 不支持增量备份
 
 
 ### mysqldump 进行备份
+
 - 备份表：mysqldump [OPTIONS] database [tables] [tables]
 - 备份数据库：mysqldump [OPTIONS] --database [OPTIONS] db1 db2;
 - 备份整个数据库：mysqldump [OPTIONS] --all-database [OPTIONS];
 
 ### 常用参数：
+
 - -u， --user=name
 - -p, --password=[=name]
 - 必须有用户权限才能备份：select,reload,lock tables,replication client, show view, process
@@ -1011,6 +1021,7 @@ mysqldumpslow slow-mysql.log
 - -w, --where='过滤条件' 只能单表数据条件导出
 
 ### mysqldump 实例
+
 ```
 mysql -uroot -p
 
@@ -1030,6 +1041,7 @@ grep "CREATE TABLE" tablename.sql
 ```
 
 ### 全量备份
+
 ```
 mysqldump -ubackup -p --master-data=2 --single-transaction --routines --triggers --events --all-databases > db.sql
 grep 'Current Database' db.sql
@@ -1071,6 +1083,7 @@ insert into cg_orderdb.order_master (字段...) select a.* from bak_orderdb.orde
 ```
 
 ### 全备数据恢复
+
 ```
 # mysql -uroot -p -e"create database bak_orderdb"
 # mysql -uroot -p bak_orderdb < cg_orderdb.sql
@@ -1091,6 +1104,7 @@ where b.order_id is null
 ```
 
 ### -tab 备份数据恢复
+
 ```
 # mysql -u root -p
 mysql>use crn
@@ -1100,11 +1114,13 @@ mysql>load data infile '/tmp/cg_orderdb/region_info.txt' into table region_info;
 ```
 
 ### mysqldummp全备总结
+
 - 常用参数
 - 全库及部分库表备份
 - 利用备份文件进行数据恢复
 
 ## 如何进行时间点的恢复
+
 - 进行某一时间点的数据恢复
   - 恢复到误操作的时间
 
@@ -1113,6 +1129,7 @@ mysql>load data infile '/tmp/cg_orderdb/region_info.txt' into table region_info;
   - 具有自上次全备后指定时间点的所有二进制日志
 
 ### 模拟生产环境数据库操作
+
 ```
 # mysqldump -ubackup -p --master-data=2 --single-transaction --routines --triggers --events mc_orderdb > mc_orderdb.sql
 mysql> use mc_orderdb
@@ -1133,6 +1150,7 @@ select count(*) from t
 ```
 
 ### 恢复步骤
+
 ```
 # mysql -uroot -p mc_orderdb < mc_orderdb.sql
 # more mc_orderdb.sql
@@ -1160,10 +1178,12 @@ mysql> select count(*) from t;
 ```
 
 ### 基于时间点的恢复总结
+
 - 具有指定时间点前的 mysqldump 的备份
 - 具有备份到指定时间点的 mysql 二进制日志
 
 ### 实施二进制日志备份
+
 - mysql 5.6版本之后，可以实时备份binlog
 
 - 配置
@@ -1238,12 +1258,14 @@ mysql> show binary logs;
 - --no-timestamp 不按时间戳目录
 
 ### xtrabackup进行全备恢复
+
 ```
 # innobackupex --apply-log /path/to/BACKUP-DIR
 # mv /path/to/BACKUP-DIR /home/mysql/data
 ```
 
 ### 增量备份
+
 > 先全备，后增量备份
 
 ```
@@ -1258,6 +1280,7 @@ mysql> create table t2(uid int(11))
 ```
 
 ### 增量备份恢复
+
 ```
 innobackupex --apply-log --redo-only 全备目录
 
@@ -1286,11 +1309,13 @@ mv /path/to/backup-dir /home/mysql/data
 ```
 
 ## 备份计划
+
 - 每天凌晨对数据库进行一次全备
 - 实时对二进制日志进行远程备份
 - crontab 定时任务
 
 ## 单点问题
+
 - 无法满足增长的读写请求
 - 高峰时数据库连接数经常上限
 
@@ -1300,6 +1325,7 @@ mv /path/to/backup-dir /home/mysql/data
 - 集群中的任一服务器宕机后，其他服务器可以读取宕机服务器
 
 ## MySQL 主从复制架构
+
 > Maser -> Slave
 
 - 主库将变更写入到主库的 binlog 中
@@ -1311,6 +1337,7 @@ mv /path/to/backup-dir /home/mysql/data
 - 从库的SQL进程读取 Relay Log 日志中内存在从库中重放
 
 ### 主从配置步骤
+
 - 配置主从数据库服务器参数
 
 - 在Master服务器上创建用于复制的数据库账号
@@ -1321,6 +1348,7 @@ mv /path/to/backup-dir /home/mysql/data
 
 
 ### 配置主从数据库服务器参数
+
 - Master 服务器
 ```
 log_bin = /data/mysql/sql_log/mysql-bin 数据和日志分开存放
@@ -1340,6 +1368,7 @@ relay_log_info_repository=TABLE
 ```
 
 ### MASTER 服务器上建立复制账号
+
 - 用于IO进程连接 Master 服务器获取 binlog 日志
 - 需要 `replication slave` 权限
 
@@ -1349,6 +1378,7 @@ grant replication slave on *.* to 'repl'@'ip';
 ```
 
 ### 初始化 Slave 数据
+
 - 建议主从数据库服务器采用相同的 MySQL 版本
 - 建议使用全备备份的方式初始化 slave 数据
 
@@ -1358,6 +1388,7 @@ grant replication slave on *.* to 'repl'@'ip';
 
 
 ### 启动基于日志点的复制链路
+
 ```
 change master to
 MASTER_HOST='mster_host_ip',
@@ -1368,6 +1399,7 @@ MASTER_LOG_POS=xxx;
 ```
 
 ### 主从复制演示
+
 - 192.168.3.100 - 主
 - 192.168.3.101 - 从
 
@@ -1494,12 +1526,14 @@ change master to
 ```
 
 ### GTID 复制的限制
+
 - 无法使用 create table ... select 建立表
 - 无法在事务中使用 create temporary table 建立临时表
 - 无法使用关联更新同时更新事务表和非事务表
 
 
 ### 引入复制后的数据库架构
+
 - 增加了一个数据库副本
 - 根本上没有解决数据库单点问题
 - 主服务器宕机，需要手动切换从服务器，业务中断不能忍受
@@ -1508,12 +1542,14 @@ change master to
 - 一个未分配给真实主机的IP，对外提供服务器的主机除了有一个真实IP外还有一个虚拟IP
 
 ### 引入 VIP 后的数据库架构
+
 - 设置虚拟IP方法
   - 脚本
   - MHA
   - MMMM
 
 ## keepalived 高可用服务
+
 - 实现主从主从数据库的健康监控
 - 当主DB宕机时迁移VIP到主备
 - 该主从复制为主主赋值，但只有一个提供服务
@@ -1521,6 +1557,7 @@ change master to
 
 
 ### 主主赋值配置调整
+
 - 保证只有一个主提供服务
 - 另一个提供只读的服务
 
@@ -1528,12 +1565,14 @@ change master to
 
 
 ### Master 数据库配置修改
+
 ```
 auto_increment_increment = 2 
 auto_increment_offset = 1
 1,3,5,7,9...
 ```
 ### 主备数据库配置
+
 ```
 auto_increment_increment = 2
 auto_increment_offset = 2
@@ -1561,6 +1600,7 @@ vrrp_script check_run {
 ```
 
 ### keepalived 演示
+
 - 主主配置
 
 1. master 配置
@@ -1709,6 +1749,7 @@ fi
 
 
 ## 如何解决读压力大问题
+
 - 读负载和写负载是两个不同的问题
 1. 写操作只能在 Maser 数据库上执行
 2. 读操作都可以在 Maser 和 Slave 运行
@@ -1723,6 +1764,7 @@ fi
 - Redis 可持久化/主从复制/集群
 
 ### 如何进行读写分离
+
 1. SQL语句连接不同的服务器
 - 优点：完全有开发人员控制，实现更加的灵活
 - 由程序直接连接数据库，所以性能损耗比较少
@@ -1752,12 +1794,14 @@ fi
   - proxySQL
 
 ### 常用的都服务器负载均衡方式
+
 - 数据库中间层： 数据库中间层读写分离
 - DNS 轮询
 - LVS(四层代理) / Haproxy(七层代理)
 - F5(硬件)
 
 ### LVS 读服务器负载均衡
+
 - 四层代理，只进行分发，处理效率更高
 - 工作稳定，可进行高可用配置
 - 无流量，不会对主机的网络IO造成影响
