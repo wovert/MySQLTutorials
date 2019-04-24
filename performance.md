@@ -17,6 +17,7 @@
 ### 1. 超高的 QPS/TPS
 
 > QPS：每秒中处理的查询量
+
 - 风险：效率底下的SQL
 
 - CPU 10ms 处理 1个SQL
@@ -331,6 +332,7 @@ id={1,3,5,2}
 ### 3.2 raid增强传统及其硬盘的性能
 
 > 磁盘冗余队列的简称
+
 - 把多个容量较小的磁盘组成一组容量更大的磁盘，并提供数据冗余来保证数据完整性的技术
 
 - ![RAID 0](./images/raid0.png)
@@ -393,9 +395,11 @@ id={1,3,5,2}
 > 两种外部文件存储设备加载到服务器上的方法
 
 - SAN: Storage Area Network
+
 > SAN设备通过光纤链接到服务器，设备通过块接口访问，服务器可以将其当作硬盘使用
 
 - NAS: Network-Attached Storage
+
 > NAS设备使用网络连接，通过基于文件的协议和NFS 或 SMB来访问
 
 - 大量顺序读写
@@ -466,6 +470,7 @@ id={1,3,5,2}
 #### 内核相关参数: `/etc/sysctl.conf`
 
 > 对于一个TCP连接，Server与Client需要通过三次握手来建立网络连接.当三次握手成功后, 可以看到端口的状态由 LISTEN 转变为 ESTABLISHED, 接着这条链路上就可以开始传送数据了
+
 - 每一个处于监听(Listen)状态的端口, 都有自己的监听队列 
 
 - 收到请求但是没有完成 accept() 的连接总数上限
@@ -560,18 +565,22 @@ nofile: 所限制的资源是打开文件的最大数目
 ```
 
 - cfq: 公平策略(桌面级别没有问题)
+
 > cfq 需要插入不必要的请求，导致很差的响应时间
 
 - mysql服务器使用
 
 - **noop**: 电梯式调度策略
+
 > 实现了一个FIFO队列，向电梯的工作方法一样对I/O请求进行组织，当有一个新的请求到来时，他将请求合并到最近的请求之后，一次来保证请求统一介质。NOOP 倾向饿死读而利于写，因此NOOP对于**内存设备、RAM及嵌入式系统**是最好的选择
 
 
 - **deadline**(截至时间调度策略)
+
 > 确保了一个截止时间内服务请求，这个截至时间是的可调整的，而默认读期限短于写期限。这样就防止了写操作因为不能被读取而饿死的现象，Deadline对数据库类应用是最好的选择。
 
 - **anticipatory**(预料I/O调度策略)
+
 > 本质上与Deadline一样，但在最后一次读操作后，要等待6ms, 才能继续进行对其他I/O请求进行调度。他会在每个6ms中插入新的I/O操作，而会将一些小写入流合并成一个大写入流，用写入延时换取最大的写入吞吐量。AS适合于写入较多的环境，比如文件服务器，AS数据库环境表现很差。
 
 `echo deadline > /sys/block/sda/queue/scheduler`
@@ -608,7 +617,7 @@ nofile: 所限制的资源是打开文件的最大数目
 - 插件是存储引擎：数据存储、提取相分离
 
 1. 客户端(CS结构)
-- PHP/Java/C API/.Net/Python/ODBC/JDBC
+  - PHP/Java/C API/.Net/Python/ODBC/JDBC
 
 - select语句：如何从文件中获得所要查询的数据，这个具体的实现方式则是由下一层存储引擎层来实现
 
@@ -809,14 +818,6 @@ bb 说明没有更新
 ··· client2
 > select * from myinnodb; 这个操作可以运行
 ···
-
-#### ？？？
-
-
-
-
-
-
 
 ## INT/TIMESTAMP/DATETIME 性能效率比较
 
@@ -1060,8 +1061,6 @@ mysql> SHOW PROFILES;
 对于InnoDB引擎，建立索引的情况下，效率从高到低： UNIX_TIMESTAMP(int) >  datetime（直接和时间比较） >  int > UNIX_TIMESTAMP(timestamp) > timestamp（直接和时间比较）>  UNIX_TIMESTAMP(datetime)。
 
 一句话，对于MyISAM引擎，采用 UNIX_TIMESTAMP(timestamp) 比较；对于InnoDB引擎，建立索引，采用 int 或 datetime直接时间比较。
-
-
 
 ## MySQL 基准测试-测量系统性能
 
