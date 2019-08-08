@@ -1913,3 +1913,11 @@ exit 0`
 101]# /etc/init.d/lvsrs start
 102]# /etc/init.d/lvsrs start
 ```
+
+## MySQL 并发
+
+- 悲观锁
+- 乐观锁
+- 事务
+- 脏读
+- 幻读
